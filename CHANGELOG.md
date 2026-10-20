@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [1.0.2] - 2026-10-20
+
+### Fixed
+
+- **启动时多出来的黑色空白窗口**：此前的 exe 以控制台模式打包（为了保留
+  `--cli` 命令行能力），双击运行时 Windows 会先开一个空控制台窗口，
+  主界面出来后它仍在后台常驻，容易被误认为出错或开了两个窗口。
+  现在改为窗口模式打包：双击只出现一个主窗口；启动瞬间若仍检测到控制台
+  也会立即隐藏，GUI 与命令行两条路径都不会留下黑框。
+- **构建脚本**：`build.ps1` 默认窗口模式，需要控制台输出时加 `-Console`；
+  字体子集化阶段 fontTools 写到 stderr 的提示不再中断构建；
+  自检改为在打包环境下直接跑渲染自检（窗口模式没有标准输出）。
+
 ## [1.0.1] - 2026-10-20
 
 ### Fixed
@@ -71,6 +84,7 @@ _No unreleased changes._
 - 系统字体（楷体、行楷、新魏、舒体、隶书、仿宋、Ink Free、Segoe Script）不随仓库分发，
   仅在用户本机构建 exe 时打入私有副本。
 
-[Unreleased]: https://github.com/wanwuyijian/Handwritten-font-Tool/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/wanwuyijian/Handwritten-font-Tool/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.2
 [1.0.1]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.1
 [1.0.0]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.0

@@ -29,7 +29,7 @@
     "xingkai": {
       "file": "xingkai.bin",
       "format": "zlib",
-      "bytes": 2822087,
+      "bytes": 2822086,
       "chars": 7542,
       "source": "STXINGKA.TTF",
       "note": "Windows system font (not redistributed)",
@@ -38,7 +38,7 @@
     "xinwei": {
       "file": "xinwei.bin",
       "format": "zlib",
-      "bytes": 2782251,
+      "bytes": 2782253,
       "chars": 7542,
       "source": "STXINWEI.TTF",
       "note": "Windows system font (not redistributed)",
@@ -65,7 +65,7 @@
     "fangsong": {
       "file": "fangsong.bin",
       "format": "zlib",
-      "bytes": 1436238,
+      "bytes": 1436239,
       "chars": 7778,
       "source": "simfang.ttf",
       "note": "Windows system font (not redistributed)",
@@ -74,7 +74,7 @@
     "inkfree": {
       "file": "inkfree.bin",
       "format": "zlib",
-      "bytes": 16697,
+      "bytes": 16696,
       "chars": 140,
       "source": "Inkfree.ttf",
       "note": "Windows system font (not redistributed)",

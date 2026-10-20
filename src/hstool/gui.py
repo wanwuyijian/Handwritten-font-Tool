@@ -1111,8 +1111,29 @@ class HandwritingApp(tk.Tk):
             self.destroy()
 
 
+def _hide_console() -> None:
+    """Hide the console window the GUI build carries (no black box on startup).
+
+    The exe is built with console=True so that ``--cli`` / ``--selftest`` keep
+    printing; the GUI never needs it, and an empty console would linger as a
+    black window next to the app.
+    """
+    try:
+        import ctypes
+
+        u = ctypes.windll.user32
+        if getattr(u, "GetConsoleWindow", None) is None:
+            return
+        hwnd = int(u.GetConsoleWindow() or 0)
+        if hwnd:
+            u.ShowWindow(hwnd, 0)  # SW_HIDE
+    except Exception:  # pragma: no cover - cosmetically only
+        pass
+
+
 def run() -> int:
     """Start the GUI; returns a process exit code."""
+    _hide_console()
     from .logging_setup import install_excepthook
 
     install_excepthook()
@@ -1133,6 +1154,10 @@ def run() -> int:
             pass
         return 1
     try:
+        app.update_idletasks()
+        app.deiconify()
+        app.lift()
+        _hide_console()
         app.mainloop()
     except Exception:
         text = traceback.format_exc()
