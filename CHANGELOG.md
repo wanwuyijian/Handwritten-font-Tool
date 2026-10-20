@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [1.0.1] - 2026-10-20
+
+### Fixed
+
+- **尺寸与清晰度面板空白**：部分机器上「尺寸预设」下拉框、「宽 / 高」输入框
+  不显示当前值。原因是 Tk 9 运行环境缺少初始化脚本时，只读下拉框
+  会让绑定在控件上的 Tcl 变量失效。现在下拉框与输入框直接读写控件文本，
+  不再依赖这些变量，并在启动时检测 Tk 是否完整初始化，异常写入操作日志。
+- **毫米输入行拥挤**：宽 / 高 两个单位标签不再被截断成 “m”，
+  「高」标签与输入框间距放宽。
+- **滑块标签被挤压**：「字迹微调」每行的提示文字在窄列里显示成 “细 ← →” 等
+  被截断的样子，现在右列加宽、滑块加长，六个滑块的提示完整可见。
+
+### Changed
+
+- 尺寸预设文本改为「45 × 15 mm · 标准（合同）」这样以尺寸开头的写法，
+  下拉框变窄时也不会把尺寸截掉。
+- 选择预设时会同步刷新「宽 / 高」输入框，手动输入后会按当前尺寸重新匹配预设。
+
 ## [1.0.0] - 2026-10-20
 
 ### Added
@@ -52,5 +71,6 @@ _No unreleased changes._
 - 系统字体（楷体、行楷、新魏、舒体、隶书、仿宋、Ink Free、Segoe Script）不随仓库分发，
   仅在用户本机构建 exe 时打入私有副本。
 
-[Unreleased]: https://github.com/wanwuyijian/Handwritten-font-Tool/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/wanwuyijian/Handwritten-font-Tool/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.1
 [1.0.0]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.0

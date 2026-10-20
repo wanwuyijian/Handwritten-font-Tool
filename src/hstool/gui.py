@@ -50,10 +50,10 @@ from .worker import RenderWorker
 log = get_logger("gui")
 
 PREVIEW_MAX_MM = 62.0        # preview never wider than this even for big sizes
-CONTROLS_W = 615             # min width of the whole option panel (px)
+CONTROLS_W = 651             # min width of the whole option panel (px)
 COLUMN_W_A = 300             # left option column min width (px)
-COLUMN_W_B = 290             # right option column min width (px)
-SLIDER_WIDTH = 130           # slider length; keeps the right column compact
+COLUMN_W_B = 336             # right option column min width (px)
+SLIDER_WIDTH = 175           # slider length; the panel widens to fit
 DEFAULT_GEOMETRY = "1180x760"  # roomy default; shrunk to fit small screens
 RENDER_DEBOUNCE_MS = 260
 
@@ -94,9 +94,11 @@ class HandwritingApp(tk.Tk):
         self._style_keys: list[str] = []
         self._closing = False
         self._last_render_at = 0.0
+        self._tk_ready = True
 
         self.title("%s v%s" % (APP_NAME, __version__))
         self.minsize(900, 560)
+        self._tk_ready_guard()
         self._build_style()
         self._build_menu()
         self._build_layout()
@@ -390,24 +392,28 @@ class HandwritingApp(tk.Tk):
         self._box_size = box
         box.pack(fill="x", anchor="n", pady=(0, 8))
 
-        self.preset_var = tk.StringVar()
+        self.preset_var = tk.StringVar(master=self)
+        self.preset_var.set(SIZE_PRESETS[1][1])
         self.preset_combo = ttk.Combobox(
-            box, textvariable=self.preset_var, state="readonly",
-            values=[label for _k, label, _s in SIZE_PRESETS],
+            box, state="readonly", width=18, values=[label for _k, label, _s in SIZE_PRESETS],
         )
+        self.preset_combo.set(self.preset_var.get())
         self.preset_combo.pack(fill="x")
         self.preset_combo.bind("<<ComboboxSelected>>", lambda e: self._on_preset())
 
         mm_row = ttk.Frame(box)
         mm_row.pack(fill="x", pady=(6, 0))
         ttk.Label(mm_row, text="宽").pack(side="left")
-        self.width_var = tk.StringVar(value="35")
-        self.width_entry = ttk.Entry(mm_row, width=6, textvariable=self.width_var)
-        self.width_entry.pack(side="left", padx=(4, 2))
-        ttk.Label(mm_row, text="mm   高").pack(side="left")
-        self.height_var = tk.StringVar(value="14")
-        self.height_entry = ttk.Entry(mm_row, width=6, textvariable=self.height_var)
-        self.height_entry.pack(side="left", padx=(4, 2))
+        self.width_var = tk.StringVar(master=self, value="%.1f" % SIZE_PRESETS[1][2][0])
+        self.width_entry = ttk.Entry(mm_row, width=5)
+        self.width_entry.insert(0, self.width_var.get())
+        self.width_entry.pack(side="left", padx=(3, 1))
+        ttk.Label(mm_row, text="mm").pack(side="left")
+        ttk.Label(mm_row, text="高").pack(side="left", padx=(8, 0))
+        self.height_var = tk.StringVar(master=self, value="%.1f" % SIZE_PRESETS[1][2][1])
+        self.height_entry = ttk.Entry(mm_row, width=5)
+        self.height_entry.insert(0, self.height_var.get())
+        self.height_entry.pack(side="left", padx=(3, 1))
         ttk.Label(mm_row, text="mm").pack(side="left")
         for entry in (self.width_entry, self.height_entry):
             entry.bind("<Return>", lambda e: self._on_size_entry())
@@ -416,13 +422,13 @@ class HandwritingApp(tk.Tk):
         dpi_row = ttk.Frame(box)
         dpi_row.pack(fill="x", pady=(6, 0))
         ttk.Label(dpi_row, text="清晰度").pack(side="left")
-        self.dpi_var = tk.StringVar(value="600")
-        dpi_combo = ttk.Combobox(
-            dpi_row, textvariable=self.dpi_var, state="readonly", width=7,
-            values=[str(d) for d in DPI_CHOICES],
+        self.dpi_var = tk.StringVar(master=self, value="600")
+        self.dpi_combo = ttk.Combobox(
+            dpi_row, state="readonly", width=7, values=[str(d) for d in DPI_CHOICES],
         )
-        dpi_combo.pack(side="left", padx=(4, 6))
-        dpi_combo.bind("<<ComboboxSelected>>", lambda e: self._on_change("dpi"))
+        self.dpi_combo.set(self.dpi_var.get())
+        self.dpi_combo.pack(side="left", padx=(4, 6))
+        self.dpi_combo.bind("<<ComboboxSelected>>", lambda e: self._on_dpi())
         ttk.Label(dpi_row, text="DPI", style="Hint.TLabel").pack(side="left")
 
         self.transparent_var = tk.BooleanVar(value=True)
@@ -486,10 +492,12 @@ class HandwritingApp(tk.Tk):
         self.jitter_var.set(int(s.jitter))
         self.slant_var.set(int(getattr(s, "slant", 50)))
         self.dpi_var.set(str(s.dpi if s.dpi in DPI_CHOICES else 600))
+        self.dpi_combo.set(self.dpi_var.get())
         self.transparent_var.set(bool(s.transparent))
         self.autosize_var.set(bool(s.auto_size))
         self.width_var.set("%.1f" % float(s.width_mm))
         self.height_var.set("%.1f" % float(s.height_mm))
+        self._show_size_widgets()
 
         preset_label = SIZE_PRESETS[1][1]
         for key, label, (w, h) in SIZE_PRESETS:
@@ -497,6 +505,7 @@ class HandwritingApp(tk.Tk):
                 preset_label = label
                 break
         self.preset_var.set(preset_label)
+        self.preset_combo.set(preset_label)
         self._apply_font_key(s.font_key)
 
         if s.window_geometry:
@@ -569,25 +578,38 @@ class HandwritingApp(tk.Tk):
 
     def _on_preset(self) -> None:
         index = self.preset_combo.current()
+        if index < 0 and self.preset_var.get() in [lab for _k, lab, _s in SIZE_PRESETS]:
+            index = [lab for _k, lab, _s in SIZE_PRESETS].index(self.preset_var.get())
         if 0 <= index < len(SIZE_PRESETS):
             _key, _label, (w, h) = SIZE_PRESETS[index]
             self.width_var.set("%.1f" % w)
             self.height_var.set("%.1f" % h)
+            self._show_size_widgets()
             self.settings.size_preset = _key
             self._on_size_entry()
 
     def _on_size_entry(self) -> None:
         try:
-            w = float(self.width_var.get().replace("，", ".").replace(",", "."))
-            h = float(self.height_var.get().replace("，", ".").replace(",", "."))
+            w = float(self.width_entry.get().replace("，", ".").replace(",", "."))
+            h = float(self.height_entry.get().replace("，", ".").replace(",", "."))
         except ValueError:
             return
+        self.width_var.set("%.1f" % w)
+        self.height_var.set("%.1f" % h)
         w = max(5.0, min(250.0, w))
         h = max(4.0, min(120.0, h))
         self.settings.width_mm = w
         self.settings.height_mm = h
         self._update_size_hint()
         self._schedule_render()
+
+    def _on_dpi(self) -> None:
+        try:
+            value = int(self.dpi_combo.get())
+        except (tk.TclError, ValueError):
+            return
+        self.dpi_var.set(str(value))
+        self._on_change("dpi")
 
     def _update_size_hint(self) -> None:
         try:
@@ -619,6 +641,49 @@ class HandwritingApp(tk.Tk):
         self.on_copy()
         return "break"
 
+    def _tk_ready_guard(self) -> None:
+        """Tk 9 builds that skip init scripts leave ::tk:: vars undefined.
+
+        A readonly ttk.Combobox may then pop its list window the first time a
+        value is set and destroy the Tcl variables it was bound to.  Variables
+        are therefore only created once the interpreter is fully initialised.
+        """
+        try:
+            ok = self.tk.call("info", "exists", "::tk::ScreenChanged") == "1"
+        except tk.TclError:
+            ok = False
+        if not ok:
+            try:
+                self.tk.call("package", "require", "Tk")
+                ok = self.tk.call("info", "exists", "::tk::ScreenChanged") == "1"
+            except tk.TclError:
+                ok = False
+        self._tk_ready = bool(ok)
+        if not self._tk_ready:
+            log.warning("Tk initialisation scripts missing; using widget text fallbacks")
+
+    def _sync_size_widgets(self) -> None:
+        """Re-show width / height / preset after an external size change."""
+        try:
+            self.width_entry.configure(textvariable=self.width_var)
+            self.height_entry.configure(textvariable=self.height_var)
+            self.preset_combo.configure(textvariable=self.preset_var)
+        except tk.TclError:
+            return
+        self.after_idle(self._show_size_widgets)
+
+    def _show_size_widgets(self) -> None:
+        # widgets kept their text when the variable was re-bound: push it again
+        try:
+            self.width_entry.delete(0, "end")
+            self.width_entry.insert(0, self.width_var.get())
+            self.height_entry.delete(0, "end")
+            self.height_entry.insert(0, self.height_var.get())
+            if self.preset_combo.get() != self.preset_var.get():
+                self.preset_combo.set(self.preset_var.get())
+        except (tk.TclError, ValueError):
+            pass
+
     def _on_text_changed(self, render: bool = True) -> None:
         text = self.txt.get("1.0", "end").strip("\n")
         report = analyze(text)
@@ -642,8 +707,8 @@ class HandwritingApp(tk.Tk):
         return RenderOptions(
             text=self.txt.get("1.0", "end"),
             font_key=self._current_font_key(),
-            width_mm=float(self.width_var.get() or 35),
-            height_mm=float(self.height_var.get() or 14),
+            width_mm=float(self.width_entry.get() or self.width_var.get() or 45),
+            height_mm=float(self.height_entry.get() or self.height_var.get() or 15),
             dpi=int(self.dpi_var.get() or 600),
             pen_key=self.pen_var.get() or "fountain",
             color_key=self.color_var.get() or "black",
@@ -1008,8 +1073,8 @@ class HandwritingApp(tk.Tk):
     def _save_settings(self) -> None:
         s = self.settings
         try:
-            s.width_mm = float(self.width_var.get())
-            s.height_mm = float(self.height_var.get())
+            s.width_mm = float(self.width_entry.get())
+            s.height_mm = float(self.height_entry.get())
         except ValueError:
             pass
         s.font_key = self._current_font_key()

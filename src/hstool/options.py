@@ -27,9 +27,9 @@ MM_PER_INCH = 25.4
 
 # Target sizes expressed in mm (width x height)
 SIZE_PRESETS = (
-    ("a5", "小号 30 × 10 mm（表格签名格）", (30.0, 10.0)),
-    ("contract", "标准 45 × 15 mm（合同/保证书）", (45.0, 15.0)),
-    ("a4", "大号 55 × 18 mm（资料/公文）", (55.0, 18.0)),
+    ("a5", "30 × 10 mm · 小号（表格）", (30.0, 10.0)),
+    ("contract", "45 × 15 mm · 标准（合同）", (45.0, 15.0)),
+    ("a4", "55 × 18 mm · 大号（公文）", (55.0, 18.0)),
 )
 
 SIZE_DEFAULT = "contract"

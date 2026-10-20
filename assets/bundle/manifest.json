@@ -20,7 +20,7 @@
     "kaiti": {
       "file": "kaiti.bin",
       "format": "zlib",
-      "bytes": 1572061,
+      "bytes": 1572060,
       "chars": 7778,
       "source": "simkai.ttf",
       "note": "Windows system font (not redistributed)",
@@ -38,7 +38,7 @@
     "xinwei": {
       "file": "xinwei.bin",
       "format": "zlib",
-      "bytes": 2782254,
+      "bytes": 2782251,
       "chars": 7542,
       "source": "STXINWEI.TTF",
       "note": "Windows system font (not redistributed)",
@@ -56,7 +56,7 @@
     "lisu": {
       "file": "lisu.bin",
       "format": "zlib",
-      "bytes": 1458525,
+      "bytes": 1458524,
       "chars": 7563,
       "source": "SIMLI.TTF",
       "note": "Windows system font (not redistributed)",
@@ -74,7 +74,7 @@
     "inkfree": {
       "file": "inkfree.bin",
       "format": "zlib",
-      "bytes": 16696,
+      "bytes": 16697,
       "chars": 140,
       "source": "Inkfree.ttf",
       "note": "Windows system font (not redistributed)",
@@ -83,7 +83,7 @@
     "segoescript": {
       "file": "segoescript.bin",
       "format": "zlib",
-      "bytes": 214893,
+      "bytes": 214894,
       "chars": 289,
       "source": "segoesc.ttf",
       "note": "Windows system font (not redistributed)",
