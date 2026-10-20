@@ -1,0 +1,9 @@
+# Runtime dependencies (the built exe embeds these)
+pillow>=10.0
+fonttools>=4.40
+brotli>=1.0
+
+# Notes
+#   * brotli is required by fonttools to read/write WOFF2; the bundled fonts
+#     ship as WOFF (zlib) so this is only needed when rebuilding font bundles.
+#   * tkinter comes with the official python.org Windows installer.

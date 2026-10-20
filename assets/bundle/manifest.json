@@ -1,0 +1,93 @@
+{
+  "charset_size": 35888,
+  "fonts": {
+    "wenkai": {
+      "file": "wenkai.woff",
+      "format": "woff",
+      "bytes": 3426172,
+      "chars": 9519,
+      "source": "LXGWWenKai-Regular.ttf",
+      "note": "OFL 1.1 - LXGW WenKai"
+    },
+    "yozai": {
+      "file": "yozai.woff",
+      "format": "woff",
+      "bytes": 3458280,
+      "chars": 9451,
+      "source": "Yozai-Regular.ttf",
+      "note": "OFL 1.1 - Yozai"
+    },
+    "kaiti": {
+      "file": "kaiti.bin",
+      "format": "zlib",
+      "bytes": 1572061,
+      "chars": 7778,
+      "source": "simkai.ttf",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    },
+    "xingkai": {
+      "file": "xingkai.bin",
+      "format": "zlib",
+      "bytes": 2822087,
+      "chars": 7542,
+      "source": "STXINGKA.TTF",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    },
+    "xinwei": {
+      "file": "xinwei.bin",
+      "format": "zlib",
+      "bytes": 2782254,
+      "chars": 7542,
+      "source": "STXINWEI.TTF",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    },
+    "shuti": {
+      "file": "shuti.bin",
+      "format": "zlib",
+      "bytes": 2510578,
+      "chars": 7575,
+      "source": "FZSTK.TTF",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    },
+    "lisu": {
+      "file": "lisu.bin",
+      "format": "zlib",
+      "bytes": 1458525,
+      "chars": 7563,
+      "source": "SIMLI.TTF",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    },
+    "fangsong": {
+      "file": "fangsong.bin",
+      "format": "zlib",
+      "bytes": 1436238,
+      "chars": 7778,
+      "source": "simfang.ttf",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    },
+    "inkfree": {
+      "file": "inkfree.bin",
+      "format": "zlib",
+      "bytes": 16696,
+      "chars": 140,
+      "source": "Inkfree.ttf",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    },
+    "segoescript": {
+      "file": "segoescript.bin",
+      "format": "zlib",
+      "bytes": 214893,
+      "chars": 289,
+      "source": "segoesc.ttf",
+      "note": "Windows system font (not redistributed)",
+      "charset": "signature-8000"
+    }
+  }
+}

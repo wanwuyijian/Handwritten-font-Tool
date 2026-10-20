@@ -1,0 +1,56 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# ---- PyInstaller ----
+build/
+dist/
+*.spec
+!build.ps1
+
+# ---- Runtime output ----
+logs/
+*.log
+*.log.*
+settings.json
+*.tmp
+.hstool/
+
+# ---- Handwritten signatures (privacy: never commit rendered results) ----
+output/
+out/
+signature*.png
+签名*.png
+
+# ---- Fonts that may NOT be redistributed ----
+# 系统字体（楷体/行楷/新魏/舒体/隶书/仿宋/Ink Free/Segoe Script）的字体子集只在本地
+# 构建 exe 时打进二进制，禁止提交到仓库。
+assets/bundle/*.bin
+assets/raw/
+# 用户自备字体（如毛泽东体）版权归字体厂商，绝不入库
+assets/fonts/custom/
+fonts/
+*.ttf
+*.otf
+*.ttc
+# ...但内置的开源字体（SIL OFL 1.1）与它们导出的 woff 子集必须入库
+!assets/fonts/LXGWWenKai-Regular.ttf
+!assets/fonts/Yozai-Regular.ttf
+!assets/bundle/*.woff
+
+# ---- OS / editor noise ----
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# ---- DSH tooling scratch ----
+.dsh-ops-update-*.lock
