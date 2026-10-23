@@ -177,3 +177,7 @@ def exe_main() -> None:
     if code:
         log.error("exiting with code %d (logs: %s, crashes: %s)", code, log_file(), crash_path())
     raise SystemExit(code)
+
+
+if __name__ == "__main__":  # pragma: no cover - allows "python -m hstool"
+    raise SystemExit(script_main())

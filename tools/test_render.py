@@ -211,3 +211,15 @@ def test_slant_leans_the_ink():
 def test_slant_is_clamped():
     opts = RenderOptions(slant=9.9).clamped()
     assert abs(opts.slant) <= 0.45
+
+
+def test_cjk_font_detection():
+    """Custom fonts must report their real CJK support (regression: close())."""
+    from hstool.fonts import font_has_cjk
+
+    chinese = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts" / "simkai.ttf"
+    latin = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts" / "segoesc.ttf"
+    if chinese.exists():
+        assert font_has_cjk(chinese) is True
+    if latin.exists():
+        assert font_has_cjk(latin) is False

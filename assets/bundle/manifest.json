@@ -20,7 +20,7 @@
     "kaiti": {
       "file": "kaiti.bin",
       "format": "zlib",
-      "bytes": 1572060,
+      "bytes": 1572059,
       "chars": 7778,
       "source": "simkai.ttf",
       "note": "Windows system font (not redistributed)",
@@ -29,7 +29,7 @@
     "xingkai": {
       "file": "xingkai.bin",
       "format": "zlib",
-      "bytes": 2822086,
+      "bytes": 2822085,
       "chars": 7542,
       "source": "STXINGKA.TTF",
       "note": "Windows system font (not redistributed)",
@@ -38,7 +38,7 @@
     "xinwei": {
       "file": "xinwei.bin",
       "format": "zlib",
-      "bytes": 2782253,
+      "bytes": 2782254,
       "chars": 7542,
       "source": "STXINWEI.TTF",
       "note": "Windows system font (not redistributed)",
@@ -47,7 +47,7 @@
     "shuti": {
       "file": "shuti.bin",
       "format": "zlib",
-      "bytes": 2510578,
+      "bytes": 2510577,
       "chars": 7575,
       "source": "FZSTK.TTF",
       "note": "Windows system font (not redistributed)",
@@ -65,7 +65,7 @@
     "fangsong": {
       "file": "fangsong.bin",
       "format": "zlib",
-      "bytes": 1436239,
+      "bytes": 1436238,
       "chars": 7778,
       "source": "simfang.ttf",
       "note": "Windows system font (not redistributed)",
@@ -74,7 +74,7 @@
     "inkfree": {
       "file": "inkfree.bin",
       "format": "zlib",
-      "bytes": 16696,
+      "bytes": 16695,
       "chars": 140,
       "source": "Inkfree.ttf",
       "note": "Windows system font (not redistributed)",
@@ -83,7 +83,7 @@
     "segoescript": {
       "file": "segoescript.bin",
       "format": "zlib",
-      "bytes": 214894,
+      "bytes": 214892,
       "chars": 289,
       "source": "segoesc.ttf",
       "note": "Windows system font (not redistributed)",

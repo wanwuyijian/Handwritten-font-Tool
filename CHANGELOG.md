@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [1.0.3] - 2026-10-23
+
+### Fixed
+
+- **自定义字体只对英文/数字生效，汉字退回楷体**：字体中文支持检测在收尾时
+  调用了一个 Pillow 字体对象并不存在的 `close()` 方法，抛出的异常被外层
+  兜底吞掉，导致所有自备字体都被判定为“仅支持英文/数字”，汉字自动换用楷体。
+  现在检测结果与字体真实 cmap 一致，导入的中文手写字体（如李旭科钢笔行书）
+  可以直接渲染汉字。
+- `python -m hstool` 现在能直接启动（此前缺少 `__main__` 入口调用）。
+
 ## [1.0.2] - 2026-10-20
 
 ### Fixed

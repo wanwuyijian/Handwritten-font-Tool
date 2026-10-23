@@ -358,7 +358,10 @@ def font_has_cjk(path: Path) -> bool:
             mask, _ = font.getmask2(_CJK_PROBE, "L")
             result = mask.size[0] > 0
         finally:
-            font.close()
+            # Pillow's FreeTypeFont has no close(); TTFont does.
+            closer = getattr(font, "close", None)
+            if closer is not None:
+                closer()
         # "notdef" placeholder glyphs still report a width; verify with
         # fontTools for a definitive answer.
         result = result and _cmap_has(path, 0x6C38)
