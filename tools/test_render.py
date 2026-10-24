@@ -223,3 +223,22 @@ def test_cjk_font_detection():
         assert font_has_cjk(chinese) is True
     if latin.exists():
         assert font_has_cjk(latin) is False
+
+
+def test_custom_font_also_handles_digits():
+    """A user font without a latin fallback keeps its own glyphs for 0-9/A-z."""
+    from hstool.fonts import discover_custom
+    from hstool.render import _pick_font_key, _resolve_font_files
+    from hstool.text import Script
+
+    custom = [style for style in discover_custom()]
+    if not custom:
+        return  # no user fonts installed while running the tests
+    opts = RenderOptions(text="2024abc", font_key=custom[0].key)
+    files = _resolve_font_files(opts)
+    assert _pick_font_key(opts, Script.LATIN, files) == custom[0].key
+    assert _pick_font_key(opts, Script.CJK, files) == custom[0].key
+
+    # built-in CJK styles still borrow a matching Latin face on purpose
+    kaiti = RenderOptions(text="2024abc", font_key="kaiti")
+    assert _pick_font_key(kaiti, Script.LATIN, files) == "wenkai"

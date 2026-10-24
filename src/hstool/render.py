@@ -127,21 +127,23 @@ def _resolve_font_files(opts: RenderOptions) -> Dict[str, object]:
 
 def _pick_font_key(opts: RenderOptions, script: str, files: Dict[str, object]) -> str:
     style = get_style(opts.font_key)
+    own = opts.font_key if opts.font_key in files else ""
     if script == Script.CJK:
-        key = opts.font_key
-        if not style.supports_cjk:
-            key = "wenkai" if "wenkai" in files else "kaiti"
+        if style.supports_cjk and own:
+            return own
+        key = "wenkai" if "wenkai" in files else "kaiti"
         return key if key in files else next(iter(files))
-    # latin / digits
-    if not style.supports_cjk:
-        return opts.font_key if opts.font_key in files else LATIN_FALLBACK_KEYS[0]
-    latin = style.latin_fallback or LATIN_FALLBACK_KEYS[0]
-    if latin in files and files[latin] is not None:
+    # latin / digits: an explicit fallback wins, otherwise the style itself.
+    # Custom fonts have no fallback, so their own latin/digits are used.
+    latin = style.latin_fallback or ""
+    if latin and latin in files and files[latin] is not None:
         return latin
+    if own:
+        return own
     for key in LATIN_FALLBACK_KEYS:
         if key in files and files[key] is not None:
             return key
-    return opts.font_key if opts.font_key in files else next(iter(files))
+    return next(iter(files))
 
 
 # --------------------------------------------------------------------------

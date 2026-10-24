@@ -20,7 +20,7 @@
     "kaiti": {
       "file": "kaiti.bin",
       "format": "zlib",
-      "bytes": 1572059,
+      "bytes": 1572060,
       "chars": 7778,
       "source": "simkai.ttf",
       "note": "Windows system font (not redistributed)",
@@ -29,7 +29,7 @@
     "xingkai": {
       "file": "xingkai.bin",
       "format": "zlib",
-      "bytes": 2822085,
+      "bytes": 2822086,
       "chars": 7542,
       "source": "STXINGKA.TTF",
       "note": "Windows system font (not redistributed)",
@@ -38,7 +38,7 @@
     "xinwei": {
       "file": "xinwei.bin",
       "format": "zlib",
-      "bytes": 2782254,
+      "bytes": 2782252,
       "chars": 7542,
       "source": "STXINWEI.TTF",
       "note": "Windows system font (not redistributed)",
@@ -47,7 +47,7 @@
     "shuti": {
       "file": "shuti.bin",
       "format": "zlib",
-      "bytes": 2510577,
+      "bytes": 2510578,
       "chars": 7575,
       "source": "FZSTK.TTF",
       "note": "Windows system font (not redistributed)",
@@ -74,7 +74,7 @@
     "inkfree": {
       "file": "inkfree.bin",
       "format": "zlib",
-      "bytes": 16695,
+      "bytes": 16694,
       "chars": 140,
       "source": "Inkfree.ttf",
       "note": "Windows system font (not redistributed)",
