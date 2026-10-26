@@ -363,8 +363,10 @@ class HandwritingApp(tk.Tk):
         self.jitter_var = tk.IntVar(value=35)
         self.slant_var = tk.IntVar(value=50)
         self.opacity_var = tk.IntVar(value=100)
+        self.letter_spacing_var = tk.IntVar(value=30)
+        self.script_gap_var = tk.IntVar(value=25)
 
-        # two columns x three rows keeps the panel compact on 768 px screens
+        # two columns x four rows keeps the panel compact on 768 px screens
         grid = ttk.Frame(box)
         grid.pack(fill="x")
         for idx in (0, 1):
@@ -375,17 +377,21 @@ class HandwritingApp(tk.Tk):
         right.grid(row=0, column=1, sticky="new")
 
         self._slider(left, "粗细度", self.weight_var, 0, 100,
-                     lambda: self._on_change("weight"), "细 ← → 粗")
+                     lambda: self._on_change("weight"))
         self._slider(right, "颜色深度", self.depth_var, 0, 100,
-                     lambda: self._on_change("depth"), "淡 ← → 浓")
+                     lambda: self._on_change("depth"))
+        self._slider(left, "字间间距", self.letter_spacing_var, 0, 100,
+                     lambda: self._on_change("letter_spacing"))
+        self._slider(right, "中英间距", self.script_gap_var, 0, 100,
+                     lambda: self._on_change("script_gap"))
         self._slider(left, "模糊度", self.blur_var, 0, 100,
-                     lambda: self._on_change("blur"), "清→晕")
+                     lambda: self._on_change("blur"))
         self._slider(right, "笔画抖动", self.jitter_var, 0, 100,
-                     lambda: self._on_change("jitter"), "工整→手写")
+                     lambda: self._on_change("jitter"))
         self._slider(left, "字体倾斜度", self.slant_var, 0, 100,
-                     lambda: self._on_change("slant"), "左→右 50端正")
+                     lambda: self._on_change("slant"))
         self._slider(right, "整体透明度", self.opacity_var, 30, 100,
-                     lambda: self._on_change("opacity"), "淡 ← → 浓")
+                     lambda: self._on_change("opacity"))
 
     def _build_size_box(self, parent: ttk.Frame, column: int = 0, row: int = 0) -> None:
         box = ttk.LabelFrame(parent, text=" 5. 尺寸与清晰度 ", padding=8)
@@ -491,6 +497,8 @@ class HandwritingApp(tk.Tk):
         self.opacity_var.set(int(s.opacity))
         self.jitter_var.set(int(s.jitter))
         self.slant_var.set(int(getattr(s, "slant", 50)))
+        self.letter_spacing_var.set(int(getattr(s, "letter_spacing", 30)))
+        self.script_gap_var.set(int(getattr(s, "script_gap", 25)))
         self.dpi_var.set(str(s.dpi if s.dpi in DPI_CHOICES else 600))
         self.dpi_combo.set(self.dpi_var.get())
         self.transparent_var.set(bool(s.transparent))
@@ -712,12 +720,14 @@ class HandwritingApp(tk.Tk):
             dpi=int(self.dpi_var.get() or 600),
             pen_key=self.pen_var.get() or "fountain",
             color_key=self.color_var.get() or "black",
-            weight=0.2 + (self.weight_var.get() / 100.0) * 2.8,
+            weight=(self.weight_var.get() / 100.0) * 3.0,
             depth=self.depth_var.get() / 100.0,
             blur=self.blur_var.get() / 100.0,
             opacity=0.3 + (self.opacity_var.get() / 100.0) * 0.7,
             jitter=self.jitter_var.get() / 100.0,
             slant=(self.slant_var.get() - 50) / 50.0 * SLANT_MAX,
+            letter_spacing=-0.30 + (self.letter_spacing_var.get() / 100.0) * 1.10,
+            script_gap=(self.script_gap_var.get() / 100.0) * 0.80,
             color_mode="RGBA" if self.transparent_var.get() else "RGB",
             auto_size=bool(self.autosize_var.get()),
             max_file_kb=int(getattr(s, "max_file_kb", 0) or 0),
@@ -1086,6 +1096,8 @@ class HandwritingApp(tk.Tk):
         s.opacity = int(self.opacity_var.get())
         s.jitter = int(self.jitter_var.get())
         s.slant = int(self.slant_var.get())
+        s.letter_spacing = int(self.letter_spacing_var.get())
+        s.script_gap = int(self.script_gap_var.get())
         s.transparent = bool(self.transparent_var.get())
         s.auto_size = bool(self.autosize_var.get())
         try:

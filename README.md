@@ -1,6 +1,6 @@
 # 手写签名字体生成工具 · Handwritten Signature Tool
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.5-blue)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-lightgrey)](README.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-yellow)](https://www.python.org/)
@@ -24,10 +24,12 @@
 | 10 种手写字体 | 楷体、行楷、霞鹜文楷、悠哉手写、新魏碑、舒体、隶书、仿宋、Ink Free、Segoe Script；另支持放入自备字体（如毛泽东体） |
 | 文字模糊度 | UI 滑块 0–100，0 为锐利，100 为明显晕墨 |
 | 文字颜色与类型 | 黑 / 红 / 蓝 × 钢笔 / 圆珠笔 / 铅笔，共 9 种笔迹组合，笔型影响笔锋、颗粒与毛边 |
-| 文字粗细度 | UI 滑块，控制笔画加粗 / 变细 |
+| 文字粗细度 | UI 滑块 0–100，0 为极细笔画（可细到发丝），100 为明显加粗 |
 | 文字颜色深度 | UI 滑块，控制墨色浓淡（淡墨偏灰，浓墨饱满） |
 | 字体倾斜度 | UI 滑块，左倾 ← → 右倾（50 为端正），模拟右倾签名的书写习惯 |
-| 免安装 exe | PyInstaller onefile，单文件约 30 MB，复制即用 |
+| 字间间距 | UI 滑块，控制每个字之间的疏密（可压紧到 0.3 em，也可拉开） |
+| 中英间距 | UI 滑块，控制汉字与英文 / 数字交界处的留白 |
+| 免安装 exe | PyInstaller onefile，单文件约 42 MB，复制即用 |
 | 最大化 / 最小化 | 标准 Windows 窗口，可最大化、最小化、拖动、记忆窗口大小 |
 | 操作日志与崩溃日志 | 程序同目录 `logs\`（不可写时自动改用 `%LOCALAPPDATA%\HandwrittenSignatureTool\logs\`），单个文件 2 MB 自动滚动保留 3 份；崩溃单独记录堆栈 |
 | 版本控制 | Git 仓库 + 语义化版本 + `CHANGELOG.md`，`build.ps1 -Version x.y.z` 一键升版本 |
@@ -41,7 +43,9 @@
 | 1. 输入签名文字 | 输入框 | 中英文混排自动分段；下方实时显示「几字 · 汉字几」 |
 | 2. 手写字体 | 10 种字体下拉框 | 选中即时预览；「刷新字体列表」「打开字体文件夹」可加载自备 .ttf/.otf |
 | 3. 笔型与墨色 | 笔型 × 墨色 | 钢笔 / 圆珠笔 / 铅笔 × 黑 / 红 / 蓝 |
-| 4. 字迹微调 | 粗细度 | 细 → 粗 |
+| 4. 字迹微调 | 粗细度 | 极细 → 粗（0 为发丝级细笔，100 为加粗） |
+| | 字间间距 | 紧 → 松（字与字之间的留白） |
+| | 中英间距 | 紧贴 → 拉开（汉字与英文 / 数字交界处） |
 | | 模糊度 | 清晰 → 晕染 |
 | | 字体倾斜度 | 左倾 → 右倾（50 端正，对应 ±24°） |
 | | 颜色深度 | 淡 → 浓 |

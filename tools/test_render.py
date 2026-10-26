@@ -132,6 +132,60 @@ def test_empty_text():
     assert res.image.size == (1, 1)
 
 
+def _ink_pixels(res) -> int:
+    return sum(1 for v in res.image.getchannel("A").tobytes() if v > 40)
+
+
+def _ink_stats(res) -> tuple:
+    vals = [v for v in res.image.getchannel("A").tobytes() if v > 40]
+    if not vals:
+        return 0, 0.0
+    return len(vals), sum(vals) / len(vals)
+
+
+def test_weight_reaches_hairline():
+    """Slider 0 must be thinner than the font's own stroke, yet still ink."""
+    common = dict(font_key="kaiti", pen_key="fountain", depth=0.85,
+                  blur=0.05, jitter=0.0, seed=7)
+    thin = render("张永", RenderOptions(text="张永", weight=0.0, **common))
+    normal = render("张永", RenderOptions(text="张永", weight=1.0, **common))
+    thick = render("张永", RenderOptions(text="张永", weight=3.0, **common))
+    thin_ink, thin_alpha = _ink_stats(thin)
+    normal_ink, _ = _ink_stats(normal)
+    thick_ink, _ = _ink_stats(thick)
+    assert thin_ink < normal_ink * 0.85          # visibly finer than the design weight
+    assert normal_ink < thick_ink                # and the heavy end still adds ink
+    assert thin_alpha > 120                      # a hairline stays dark, not grey haze
+
+
+def _bbox_size(res) -> tuple:
+    box = res.image.getchannel("A").getbbox()
+    return (0, 0) if box is None else (box[2] - box[0], box[3] - box[1])
+
+
+def test_spacing_widens_the_ink():
+    common = dict(font_key="wenkai", seed=7)
+    tight = render("张三丰", RenderOptions(text="张三丰", letter_spacing=-0.30, **common))
+    loose = render("张三丰", RenderOptions(text="张三丰", letter_spacing=0.80, **common))
+    assert _bbox_size(loose)[0] > _bbox_size(tight)[0] * 1.15
+
+
+def test_script_gap_only_between_scripts():
+    # the gap only applies where CJK meets Latin / digits, so a CJK-only run
+    # keeps its layout width while a mixed run gets wider
+    from hstool.render import _build_layout, _resolve_font_files
+
+    def layout_width(text, gap):
+        opts = RenderOptions(text=text, script_gap=gap).clamped()
+        files = _resolve_font_files(opts)
+        _g, _f, _m, width, _h = _build_layout(opts, 100, files)
+        return width
+
+    assert abs(layout_width("张三丰", 0.8) - layout_width("张三丰", 0.0)) < 0.5
+    assert layout_width("张三丰Z", 0.8) > layout_width("张三丰Z", 0.0) + 5
+    assert layout_width("Zh2026Z", 0.8) < layout_width("Zh2026Z", 0.0) + 3
+
+
 def test_pen_differs():
     inks = {pen: build_ink(pen_key=pen) for pen in ("fountain", "ballpoint", "pencil")}
     assert inks["fountain"].body_rgb != inks["pencil"].body_rgb

@@ -74,7 +74,7 @@ class RenderOptions:
     pen_key: str = "fountain"
     color_key: str = "black"
     # UI sliders -----------------------------------------------------------
-    weight: float = 1.0      # 0.2 .. 3.0 stroke weight multiplier
+    weight: float = 1.0      # 0.0 .. 3.0 stroke weight multiplier (0 = hairline)
     depth: float = 0.9       # 0.0 .. 1.0 ink colour depth
     blur: float = 0.04       # 0.0 .. 1.0 blur amount
     opacity: float = 1.0     # 0.3 .. 1.0 overall ink opacity
@@ -83,6 +83,8 @@ class RenderOptions:
     line_gap: float = 0.16         # extra gap between lines (em fraction)
     jitter: float = 0.35           # 0..1 random per-glyph rotation / offset wobble
     slant: float = 0.0             # -0.45 .. 0.45 italic lean (positive = to the right)
+    letter_spacing: float = 0.0    # -0.30 .. 0.80 extra gap after every glyph (em)
+    script_gap: float = 0.0        # 0.0 .. 0.80 extra gap where CJK meets Latin/digit (em)
     seed: int = 0                  # 0 = random each render
     color_mode: str = COLOR_MODE_TRANSPARENT
     max_file_kb: int = 0           # >0: re-encode to stay under this size
@@ -124,7 +126,7 @@ class RenderOptions:
             width_mm=round(width, 2),
             height_mm=round(height, 2),
             dpi=dpi,
-            weight=round(clamp(float(self.weight), 0.2, 3.0), 2),
+            weight=round(clamp(float(self.weight), 0.0, 3.0), 2),
             depth=round(clamp(float(self.depth), 0.0, 1.0), 2),
             blur=round(clamp(float(self.blur), 0.0, 1.0), 2),
             opacity=round(clamp(float(self.opacity), 0.3, 1.0), 2),
@@ -132,6 +134,8 @@ class RenderOptions:
             line_gap=clamp(float(self.line_gap), 0.0, 1.0),
             jitter=clamp(float(self.jitter), 0.0, 1.0),
             slant=round(clamp(float(self.slant), -SLANT_MAX, SLANT_MAX), 3),
+            letter_spacing=round(clamp(float(self.letter_spacing), -0.30, 0.80), 3),
+            script_gap=round(clamp(float(self.script_gap), 0.0, 0.80), 3),
             max_file_kb=int(clamp(float(self.max_file_kb), 0, 5000)),
         )
 

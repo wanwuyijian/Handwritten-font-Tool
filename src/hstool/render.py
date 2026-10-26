@@ -197,11 +197,18 @@ def _build_layout(
 
     glyphs: List[_Glyph] = []
     max_width = 0.0
+    # em-based spacing from the sliders, in pixels at this font size
+    tracking = float(opts.letter_spacing) * size_px
+    script_gap = float(opts.script_gap) * size_px
     for line_index, line in enumerate(lines):
         cursor = 0.0
         base_y = line_index * (line_height + gap)
+        prev_kind = None
         for ch in line:
             kind = classify(ch) if ch != " " else Script.SPACE
+            if (script_gap > 0.0 and prev_kind in (Script.CJK, Script.LATIN)
+                    and kind in (Script.CJK, Script.LATIN) and kind != prev_kind):
+                cursor += script_gap
             if kind == Script.CJK:
                 font = cjk_font
                 top = ascent - ascent_cjk
@@ -212,7 +219,11 @@ def _build_layout(
                 missing.append(ch)
             advance = font.getlength(ch)
             glyphs.append(_Glyph(ch, cursor, base_y + top, advance, font))
-            cursor += advance
+            cursor += advance + tracking
+            prev_kind = kind
+        # trailing tracking must not widen the ink box
+        if cursor > 0:
+            cursor -= tracking
         max_width = max(max_width, cursor)
     total_height = (len(lines) - 1) * (line_height + gap) + line_height
     return glyphs, fonts, missing, max_width, total_height
@@ -327,6 +338,29 @@ def _draw_mask(
         new_size = (max(1, int(size[0] * scale)), max(1, int(size[1] * scale)))
         mask = mask.resize(new_size, Image.BICUBIC).crop((0, 0, size[0], size[1]))
     return mask
+
+
+def _erode(mask: Image.Image, amount_px: float) -> Image.Image:
+    """Narrow a stroke by *amount_px* per side, keeping soft edges.
+
+    An outline can only add ink, so going below the font's designed weight is
+    done by eroding the mask: a Gaussian blur of sigma = amount / 0.674 moves
+    the 50% contour inward by exactly *amount* (approximately, and smoothly),
+    then the result is re-stretched so the anti-aliased edge survives.
+    """
+    if amount_px <= 0.01:
+        return mask
+    sigma = max(0.15, amount_px / 0.674)
+    soft = mask.filter(ImageFilter.GaussianBlur(sigma))
+    hard = soft.point(lambda v: 0 if v <= 127 else min(255, (v - 127) * 2))
+    # The 50% cut leaves a grey fringe; a hairline still has to look like ink,
+    # so the surviving stroke is pushed back towards full opacity.  Thick
+    # strokes are never eroded, so their weight is untouched by this gain.
+    gain = 8.0 * amount_px
+    gain = max(1.0, min(3.6, gain))
+    if gain > 1.0:
+        hard = hard.point(lambda v: min(255, int(v * gain)))
+    return hard
 
 
 def _grain(image: Image.Image, strength: float, seed: int) -> Image.Image:
@@ -538,17 +572,24 @@ def render(text: str, opts: RenderOptions) -> RenderResult:
         blur=opts.blur,
         opacity=opts.opacity,
     )
-    # margin big enough for stroke width, halo and blur, so nothing is clipped
-    margin = int(size_px * 0.08) + ink.halo_weight + int(math.ceil(ink.blur * 3)) + 4
+    # margin big enough for stroke width, halo and blur, so nothing is clipped;
+    # the extra 12 % of the glyph size covers side bearings and descenders that
+    # reach past the advance width (they would otherwise touch the canvas edge)
+    margin = (int(size_px * 0.20) + ink.halo_weight
+              + int(math.ceil(ink.blur * 3)) + 4)
     origin = (float(margin), float(margin))
-    ink_w = int(ink_w + 2 * margin)
-    ink_h = int(ink_h + 2 * margin)
+    # the last glyph often reaches past its own advance width (side bearing,
+    # descender, italic overhang), so reserve one extra margin on the far edges
+    ink_w = int(ink_w + 3 * margin)
+    ink_h = int(ink_h + 3 * margin)
 
     seed = opts.seed if opts.seed else random.randrange(1, 2 ** 31)
     rng = random.Random(seed)
 
     body_mask = _draw_mask(glyphs, (ink_w, ink_h), origin, ink.body_weight,
                            rng=rng, jitter=opts.jitter)
+    if ink.body_erode > 0.0:
+        body_mask = _erode(body_mask, ink.body_erode * size_px)
     if opts.slant:
         body_mask = _shear_mask(body_mask, opts.slant)
     canvas = Image.new("RGBA", (ink_w, ink_h), (0, 0, 0, 0))
@@ -556,6 +597,7 @@ def render(text: str, opts: RenderOptions) -> RenderResult:
         rng_h = random.Random(seed)
         halo_mask = _draw_mask(glyphs, (ink_w, ink_h), origin, ink.halo_weight,
                                scale=1.006, rng=rng_h, jitter=opts.jitter)
+        halo_mask = _erode(halo_mask, ink.halo_erode * size_px)
         if opts.slant:
             halo_mask = _shear_mask(halo_mask, opts.slant)
         halo = _colourise(halo_mask, ink.halo_rgb, ink.halo_alpha)
@@ -569,8 +611,10 @@ def render(text: str, opts: RenderOptions) -> RenderResult:
 
     canvas = _grain(canvas, ink.grain, seed)
 
-    # Trim and re-pad, then scale into the requested physical canvas.
-    pad_px = max(2.0, height_px * 0.012)
+    # Trim and re-pad, then scale into the requested physical canvas.  The pad
+    # survives the downscale below as at least a couple of clean pixels, so no
+    # ink can land on the very border of the finished PNG.
+    pad_px = max(5.0, height_px * 0.03)
     if opts.auto_size:
         keep_min = (1.0, 1.0)   # trim to the ink itself, Word-friendly
     else:

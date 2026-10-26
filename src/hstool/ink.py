@@ -125,6 +125,8 @@ class InkSpec:
     halo_weight: int
     blur: float
     grain: float
+    body_erode: float = 0.0  # erosion in em: thins the stroke below its design
+    halo_erode: float = 0.0
 
     @property
     def hex_color(self) -> str:
@@ -168,8 +170,18 @@ def build_ink(
     body_alpha = int(round(255 * pen["core_alpha"] * (0.62 + 0.38 * depth) * opacity))
     halo_alpha = int(round(255 * pen["halo_alpha"] * (0.35 + 0.65 * depth) * opacity))
 
-    body_weight = int(round(clamp(1.0 + (weight - 1.0) * 1.6, 1, 6)))
-    halo_weight = int(round(clamp(body_weight + pen["halo_scale"] + weight * 0.8, 1, 9)))
+    body_weight = int(round(clamp((weight - 1.0) * 1.7, 0, 6)))
+    halo_weight = int(round(clamp(body_weight + pen["halo_scale"] + weight * 0.8, 0, 9)))
+    # Below weight 1.0 the stroke is thinner than the font was drawn: an
+    # outline can only add ink, so the mask is eroded instead.  The amount is
+    # an em fraction, converted to pixels against the glyph size in render.py.
+    thin = clamp(1.0 - weight, 0.0, 0.85)
+    body_erode = thin * 0.014
+    halo_erode = body_erode + 0.0015
+    # a hairline stroke carries less pigment, and the soft halo is what makes a
+    # thin line read as "bold", so it fades out completely at the fine end
+    halo_fade = clamp((weight - 0.2) / 0.8, 0.0, 1.0) ** 2
+    halo_alpha = int(round(halo_alpha * halo_fade))
     effective_blur = clamp(blur * 1.6 + pen["edge"] * 0.42, 0.0, 3.2)
     grain = clamp(pen["grain"] * (1.0 - 0.6 * depth) * (0.25 + blur * 1.2), 0.0, 0.32)
 
@@ -184,6 +196,8 @@ def build_ink(
         halo_weight=halo_weight,
         blur=effective_blur,
         grain=grain,
+        body_erode=round(body_erode, 4),
+        halo_erode=round(halo_erode, 4),
     )
 
 

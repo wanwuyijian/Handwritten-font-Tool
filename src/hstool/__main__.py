@@ -43,9 +43,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--color", default="black", choices=("black", "red", "blue"))
     parser.add_argument("--size", default="35x14", help="width x height in mm")
     parser.add_argument("--dpi", type=int, default=DPI_DEFAULT)
-    parser.add_argument("--weight", type=float, default=1.0, help="0.2 .. 3.0")
+    parser.add_argument("--weight", type=float, default=1.0, help="0.0 .. 3.0 (0 = hairline)")
     parser.add_argument("--depth", type=float, default=0.9, help="0.0 .. 1.0")
     parser.add_argument("--blur", type=float, default=0.12, help="0.0 .. 1.0")
+    parser.add_argument("--letter-spacing", type=float, default=0.0,
+                        help="-0.30 .. 0.80 em gap after every glyph")
+    parser.add_argument("--script-gap", type=float, default=0.0,
+                        help="0.0 .. 0.80 em gap where CJK meets Latin/digits")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--list-fonts", action="store_true", help="print the font catalogue")
     parser.add_argument("--selftest", action="store_true", help="render every style and report")
@@ -82,6 +86,8 @@ def _cli(args) -> int:
         weight=args.weight,
         depth=args.depth,
         blur=args.blur,
+        letter_spacing=args.letter_spacing,
+        script_gap=args.script_gap,
         seed=args.seed,
     ).clamped()
     result = render(args.text, opts)

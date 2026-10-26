@@ -11,7 +11,7 @@ APP_NAME_EN = "Handwritten Signature Tool"
 APP_ID = "hstool"
 
 # Single source of truth for the version. build.ps1 reads this file.
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 VERSION = tuple(int(part) for part in __version__.split("."))
 
 GITHUB_REPO = "https://github.com/wanwuyijian/Handwritten-font-Tool"

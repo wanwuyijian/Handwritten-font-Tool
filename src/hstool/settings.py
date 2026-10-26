@@ -36,6 +36,8 @@ class Settings:
     auto_size: bool = True
     jitter: int = 35          # 0..100 handwriting wobble
     slant: int = 50           # 0..100 -> 0 = 24 deg left, 50 = upright, 100 = 24 deg right
+    letter_spacing: int = 30  # 0..100 -> -0.30 .. 0.80 em gap after every glyph
+    script_gap: int = 25      # 0..100 -> 0.00 .. 0.80 em gap between CJK and Latin/digits
     max_file_kb: int = 0      # 0 = no limit
     last_save_dir: str = ""
     window_geometry: str = ""
@@ -67,7 +69,8 @@ class Settings:
 
     # convenience conversions ------------------------------------------
     def slider_weight(self) -> float:
-        return 0.2 + (self.weight / 100.0) * 2.8
+        """Slider 0..100 -> 0..3. 0 is a true hairline (the mask is eroded)."""
+        return (self.weight / 100.0) * 3.0
 
     def slider_depth(self) -> float:
         return self.depth / 100.0
@@ -84,6 +87,14 @@ class Settings:
     def slider_slant(self) -> float:
         """Slider 0..100 -> -SLANT_MAX..+SLANT_MAX (50 = upright)."""
         return (self.slant - 50) / 50.0 * SLANT_MAX
+
+    def slider_letter_spacing(self) -> float:
+        """Slider 0..100 -> -0.30..0.80 em gap after each glyph."""
+        return -0.30 + (self.letter_spacing / 100.0) * 1.10
+
+    def slider_script_gap(self) -> float:
+        """Slider 0..100 -> 0.00..0.80 em gap where CJK meets Latin/digits."""
+        return (self.script_gap / 100.0) * 0.80
 
 
 def settings_path() -> Path:
