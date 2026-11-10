@@ -151,20 +151,49 @@ CATALOG: List[FontStyle] = [
 
 _CUSTOM_DIR_NAMES = ("custom", "用户字体")
 
+# Extra folders scanned next to the exe / repository root.  Users keep their
+# downloaded fonts in any of these (``ZiTi`` is the folder the maintainer of
+# this project uses), and a missing folder is simply skipped.
+_EXTRA_DIR_NAMES = ("fonts", "字体", "ZiTi", "ziti", "字体文件")
+
+# Fonts are only looked for one level deep: a whole disk scan would be slow
+# and would pick up hundreds of unusable faces.
+_SCAN_DEPTH = 1
+
 
 # --------------------------------------------------------------------------
 # resolution
 # --------------------------------------------------------------------------
 
 def custom_font_dirs() -> List[Path]:
-    """Directories that may add extra user fonts."""
+    """Directories that may add extra user fonts (checked in this order)."""
     dirs = [asset_path("fonts", name) for name in _CUSTOM_DIR_NAMES]
-    dirs.append(app_dir() / "fonts")
+    for name in _EXTRA_DIR_NAMES:
+        dirs.append(asset_path("fonts", name))
+        dirs.append(app_dir() / name)
     unique: List[Path] = []
     for d in dirs:
         if d not in unique:
             unique.append(d)
     return unique
+
+
+def primary_font_dir() -> Path:
+    """The folder the UI opens and the one users are told to drop fonts into.
+
+    The portable package ships a writable ``fonts\\`` folder next to the exe,
+    so that wins; a frozen build's ``_MEIPASS`` copy is read-only and must
+    never be offered.
+    """
+    app_fonts = app_dir() / "fonts"
+    if app_fonts.is_dir():
+        return app_fonts
+    for folder in custom_font_dirs():
+        if _looks_virtual(folder):
+            continue
+        if folder.is_dir() and _iter_font_files(folder, _SCAN_DEPTH):
+            return folder
+    return app_fonts
 
 
 def _resolve_system(name: str) -> Optional[Path]:
@@ -225,26 +254,60 @@ def resolve(style: FontStyle) -> Optional[Path]:
     return None
 
 
-def discover_custom() -> List[FontStyle]:
-    """Find user supplied fonts in the custom font folders."""
-    found: List[FontStyle] = []
-    seen = set()
-    for folder in custom_font_dirs():
-        if not folder.is_dir():
+_FONT_SUFFIXES = (".ttf", ".otf", ".ttc")
+
+
+def _iter_font_files(folder: Path, depth: int) -> List[Path]:
+    """Font files in *folder*, walking at most *depth* levels down."""
+    files: List[Path] = []
+    stack = [(folder, 0)]
+    while stack:
+        current, level = stack.pop()
+        if not current.is_dir():
             continue
         try:
-            entries = sorted(folder.iterdir(), key=lambda p: p.name.lower())
+            entries = sorted(current.iterdir(), key=lambda p: p.name.lower())
         except OSError:
             continue
         for entry in entries:
-            if not entry.is_file():
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
                 continue
-            if entry.suffix.lower() not in (".ttf", ".otf", ".ttc"):
+            if is_dir:
+                if level < depth:
+                    stack.append((entry, level + 1))
+                continue
+            if entry.suffix.lower() in _FONT_SUFFIXES:
+                files.append(entry)
+    return files
+
+
+def discover_custom() -> List[FontStyle]:
+    """Find user supplied fonts in the custom font folders.
+
+    Every folder returned by :func:`custom_font_dirs` is scanned one level
+    deep, so both a flat drop-in folder and the common
+    ``字体/厂家/xxx.ttf`` layout work.  Fonts are de-duplicated by file name
+    and by the file itself, so the same face dropped into two folders only
+    shows up once.
+    """
+    found: List[FontStyle] = []
+    seen_keys = set()
+    seen_files = set()
+    for folder in custom_font_dirs():
+        for entry in _iter_font_files(folder, _SCAN_DEPTH):
+            try:
+                real = entry.resolve()
+            except OSError:
+                real = entry
+            if real in seen_files:
                 continue
             key = "custom:" + entry.stem
-            if key in seen:
+            if key in seen_keys:
                 continue
-            seen.add(key)
+            seen_keys.add(key)
+            seen_files.add(real)
             found.append(
                 FontStyle(
                     key=key,
@@ -256,6 +319,7 @@ def discover_custom() -> List[FontStyle]:
                     supports_cjk=font_has_cjk(entry),
                 )
             )
+    found.sort(key=lambda style: style.name.lower())
     return found
 
 
@@ -351,6 +415,10 @@ def font_has_cjk(path: Path) -> bool:
     key = str(path)
     if key in _CJK_SUPPORT:
         return _CJK_SUPPORT[key]
+    cached = _cjk_cache_get(path)
+    if cached is not None:
+        _CJK_SUPPORT[key] = cached
+        return cached
     result = False
     try:
         font = open_truetype(path, 24)
@@ -368,7 +436,83 @@ def font_has_cjk(path: Path) -> bool:
     except Exception:
         result = False
     _CJK_SUPPORT[key] = result
+    _cjk_cache_put(path, result)
     return result
+
+
+# --------------------------------------------------------------------------
+# CJK-support cache
+#
+# Probing ~20 CJK fonts costs well over a second (fontTools has to parse the
+# cmap table of every file), which used to be paid on every start and on every
+# "refresh fonts" click.  The verdict only depends on the file itself, so it is
+# cached in a small JSON file next to the exe, keyed by path + size + mtime.
+# Any failure (read-only folder, corrupt cache) is silent: the probe simply
+# runs again.
+# --------------------------------------------------------------------------
+
+_CJK_CACHE_NAME = "font-cache.json"
+
+
+def _cjk_cache_path() -> Path:
+    return app_dir() / _CJK_CACHE_NAME
+
+
+def _cjk_cache_key(path: Path) -> Optional[str]:
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return "%s|%d|%d" % (str(path).lower(), stat.st_size, int(stat.st_mtime))
+
+
+_cjk_disk_cache: Optional[Dict[str, bool]] = None
+
+
+def _cjk_cache_load() -> Dict[str, bool]:
+    global _cjk_disk_cache
+    if _cjk_disk_cache is not None:
+        return _cjk_disk_cache
+    data: Dict[str, bool] = {}
+    try:
+        import json
+
+        with open(_cjk_cache_path(), "r", encoding="utf-8") as fh:
+            raw = json.load(fh)
+        if isinstance(raw, dict):
+            for key, value in raw.items():
+                if isinstance(key, str) and isinstance(value, bool):
+                    data[key] = value
+    except Exception:
+        data = {}
+    _cjk_disk_cache = data
+    return data
+
+
+def _cjk_cache_get(path: Path) -> Optional[bool]:
+    key = _cjk_cache_key(path)
+    if key is None:
+        return None
+    return _cjk_cache_load().get(key)
+
+
+def _cjk_cache_put(path: Path, value: bool) -> None:
+    key = _cjk_cache_key(path)
+    if key is None:
+        return
+    cache = _cjk_cache_load()
+    if cache.get(key) == value:
+        return
+    cache[key] = value
+    try:
+        import json
+
+        tmp = Path(str(_cjk_cache_path()) + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(cache, fh, ensure_ascii=False, indent=0, sort_keys=True)
+        os.replace(tmp, _cjk_cache_path())
+    except Exception:
+        pass
 
 
 def _cmap_has(path: Path, codepoint: int) -> bool:

@@ -268,25 +268,37 @@ class HandwritingApp(tk.Tk):
         self._on_text_changed()
         return "break"
 
+    def _font_box_title(self, count: int = 0) -> str:
+        """LabelFrame caption; the count is live, never hard coded."""
+        if count <= 0:
+            count = len(self._styles)
+        builtin = sum(1 for info in self._styles if info.style.origin != "custom")
+        custom = count - builtin if count > builtin else 0
+        if custom > 0:
+            return " 2. 手写字体（共 %d 种：内置 %d + 自备 %d） " % (count, builtin, custom)
+        return " 2. 手写字体（共 %d 种） " % count
+
     def _build_font_box(self, parent: ttk.Frame, column: int = 0, row: int = 0) -> None:
-        box = ttk.LabelFrame(parent, text=" 2. 手写字体（10 种） ", padding=8)
+        self._styles = list_styles()
+        box = ttk.LabelFrame(parent, text=self._font_box_title(len(self._styles)), padding=8)
         self._box_font = box
         box.pack(fill="x", anchor="n", pady=(0, 8))
 
-        self._styles = list_styles()
         labels = []
+        self._style_keys = []
         for info in self._styles:
             name = info.style.name
             if not info.available:
                 name = name + "（本机未安装）"
-            elif info.style.origin == "custom":
-                name = name
             labels.append(name)
             self._style_keys.append(info.style.key)
 
         self.font_var = tk.StringVar()
+        # height= is the number of rows the drop down shows; without it Tk
+        # stops at 10 and every imported font below the fold looked missing.
         self.font_combo = ttk.Combobox(
             box, textvariable=self.font_var, values=labels, state="readonly",
+            height=self._font_combo_height(len(labels)),
             font=("Microsoft YaHei UI", 10),
         )
         self.font_combo.pack(fill="x")
@@ -302,6 +314,31 @@ class HandwritingApp(tk.Tk):
         ttk.Label(box, text="把 .ttf 字体放进该文件夹，即可作为新字体使用（例如自备毛泽东体）",
                   style="Hint.TLabel", wraplength=COLUMN_W_A - 40).pack(fill="x", pady=(4, 0))
 
+    @staticmethod
+    def _font_combo_height(count: int) -> int:
+        """Rows the font drop down shows at once.
+
+        Tk defaults to 10 rows, which made every font past the tenth look
+        missing.  Show everything up to a sane maximum so the list stays
+        usable on a small screen, and let the scrollbar-free drop down clip
+        only beyond that.
+        """
+        return max(10, min(int(count), 26))
+
+    def _font_labels(self) -> list:
+        return [
+            info.style.name if info.available else info.style.name + "（本机未安装）"
+            for info in self._styles
+        ]
+
+    def _sync_font_combo(self) -> None:
+        """Push the current catalogue into the combo box and its caption."""
+        labels = self._font_labels()
+        self._style_keys = [info.style.key for info in self._styles]
+        self.font_combo.config(values=labels, height=self._font_combo_height(len(labels)))
+        if getattr(self, "_box_font", None) is not None:
+            self._box_font.config(text=self._font_box_title(len(self._styles)))
+
     def _build_pen_box(self, parent: ttk.Frame, column: int = 0, row: int = 0) -> None:
         box = ttk.LabelFrame(parent, text=" 3. 笔型与墨色 ", padding=8)
         self._box_pen = box
@@ -315,7 +352,7 @@ class HandwritingApp(tk.Tk):
             ttk.Radiobutton(
                 pen_row, text=PEN_LABELS.get(key, key), value=key, padding=(0, 2),
                 variable=self.pen_var, command=lambda: self._on_change("pen"),
-            ).pack(side="left", padx=(0, 8))
+            ).pack(side="left", padx=(0, 6))
 
         color_row = ttk.Frame(box)
         color_row.pack(fill="x", pady=(6, 0))
@@ -988,9 +1025,9 @@ class HandwritingApp(tk.Tk):
             log.warning("open log dir failed: %s", exc)
 
     def on_open_font_dir(self) -> None:
-        from .fonts import custom_font_dirs
+        from .fonts import primary_font_dir
 
-        folder = custom_font_dirs()[0]
+        folder = primary_font_dir()
         ensure_dir(folder)
         try:
             os.startfile(str(folder))  # noqa: S606
@@ -1004,11 +1041,7 @@ class HandwritingApp(tk.Tk):
         fonts.clear_cache()
         key = self._current_font_key()
         self._styles = list_styles()
-        self._style_keys = [info.style.key for info in self._styles]
-        self.font_combo.config(values=[
-            info.style.name if info.available else info.style.name + "（本机未安装）"
-            for info in self._styles
-        ])
+        self._sync_font_combo()
         self._apply_font_key(key)
         self._set_status("字体列表已刷新（共 %d 种）" % len(self._styles))
         self._schedule_render()
@@ -1032,14 +1065,17 @@ class HandwritingApp(tk.Tk):
         )
 
     def on_help_fonts(self) -> None:
-        from .fonts import custom_font_dirs
+        from .fonts import primary_font_dir
 
-        folder = custom_font_dirs()[0]
+        folder = primary_font_dir()
         messagebox.showinfo(
             "使用自定义手写字体",
             "如有自备手写字体（例如毛泽东体、名家手迹字体等）：\n\n"
-            "1) 把 .ttf / .otf 文件复制到：\n%s\n\n"
-            "2) 点击「刷新字体列表」，新字体会出现在字体下拉框中；\n"
+            "1) 把 .ttf / .otf / .ttc 文件复制到：\n%s\n"
+            "   （程序旁边名为 fonts、字体、字体文件、ZiTi 的文件夹也会被扫描，\n"
+            "   可再建一层子文件夹分类）\n\n"
+            "2) 点击「刷新字体列表」，新字体会出现在字体下拉框中，\n"
+            "   数量不设上限，重复的字体只显示一次；\n"
             "3) 自备字体仅本人使用，请遵守字体授权。\n\n"
             "提示：字体文件夹位于程序旁边，随程序一起复制即可带到其他电脑。" % folder,
             parent=self,

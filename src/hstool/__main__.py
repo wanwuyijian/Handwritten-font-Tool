@@ -23,6 +23,7 @@ import traceback
 from pathlib import Path
 
 from . import APP_NAME, APP_NAME_EN, __version__
+from .ink import PEN_ORDER
 from .logging_setup import crash_path, get_logger, install_excepthook, log_file, setup
 from .options import DPI_DEFAULT, RenderOptions, preset_size
 from .render import render
@@ -39,7 +40,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-o", "--out", help="output PNG path")
     parser.add_argument("--cli", action="store_true", help="run once without the GUI")
     parser.add_argument("--font", default="kaiti", help="font key, e.g. kaiti/xingkai/wenkai")
-    parser.add_argument("--pen", default="fountain", choices=("fountain", "ballpoint", "pencil"))
+    parser.add_argument("--pen", default="fountain", choices=PEN_ORDER)
     parser.add_argument("--color", default="black", choices=("black", "red", "blue"))
     parser.add_argument("--size", default="35x14", help="width x height in mm")
     parser.add_argument("--dpi", type=int, default=DPI_DEFAULT)

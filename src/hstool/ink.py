@@ -66,9 +66,30 @@ PEN_TYPES: Dict[str, dict] = {
         "core_darken": 1.35,
         "halo_wash": 0.50,
     },
+    "needle": {
+        # fineliner / needle point: the thinnest line of all pens, yet fully
+        # legible.  Nothing can make a stroke thinner than the glyph it came
+        # from, so the body mask is eroded by a fixed em fraction at every
+        # slider position, with a dead-sharp edge, full pigment and almost no
+        # halo so the fine line stays crisp instead of smearing into grey.
+        # erode_max is the legibility guard: past that the strokes of a
+        # standard CJK glyph start breaking apart into dots.
+        "label": "针型水笔",
+        "en": "Needle",
+        "core_alpha": 1.00,
+        "halo_alpha": 0.05,
+        "halo_scale": 0.35,
+        "grain": 0.02,
+        "edge": 0.25,
+        "core_darken": 0.55,
+        "halo_wash": 0.26,
+        "erode_base": 0.0126,    # em: always thins, even at max weight
+        "erode_scale": 0.0016,   # extra thinning per unit of "thin" slider
+        "erode_max": 0.0148,     # the guard: beyond this the strokes break up
+    },
 }
 
-PEN_ORDER = ("fountain", "ballpoint", "pencil")
+PEN_ORDER = ("fountain", "ballpoint", "pencil", "needle")
 COLOR_ORDER = ("black", "red", "blue")
 
 # (label, swatch colour) shown in the UI
@@ -82,6 +103,7 @@ PEN_LABELS = {
     "fountain": "钢笔",
     "ballpoint": "圆珠笔",
     "pencil": "铅笔",
+    "needle": "针型水笔",
 }
 
 
@@ -175,8 +197,16 @@ def build_ink(
     # Below weight 1.0 the stroke is thinner than the font was drawn: an
     # outline can only add ink, so the mask is eroded instead.  The amount is
     # an em fraction, converted to pixels against the glyph size in render.py.
+    # Pens may ask for a permanent, extra erosion of their own (the needle
+    # point pen is the thinnest by construction, whatever the slider says),
+    # and may cap the total so a fine line keeps its stems intact.
     thin = clamp(1.0 - weight, 0.0, 0.85)
-    body_erode = thin * 0.014
+    erode_base = float(pen.get("erode_base", 0.0))
+    erode_scale = float(pen.get("erode_scale", 0.014))
+    body_erode = erode_base + thin * erode_scale
+    erode_max = float(pen.get("erode_max", 0.0))
+    if erode_max > 0.0:
+        body_erode = min(body_erode, erode_max)
     halo_erode = body_erode + 0.0015
     # a hairline stroke carries less pigment, and the soft halo is what makes a
     # thin line read as "bold", so it fades out completely at the fine end

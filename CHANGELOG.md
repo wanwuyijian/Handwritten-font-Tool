@@ -9,6 +9,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes._
 
+## [1.1.0] - 2026-11-10
+
+### Added
+
+- **新笔型「针型水笔」**：四种笔型里最细的一种，而且细而不糊。
+  - 细的原理与「粗细度」滑块不同：字形轮廓本身无法再瘦，所以对笔画蒙版做
+    等距腐蚀（erosion），并把腐蚀量设为该笔型恒定生效——滑块在 100（最粗）
+    时它依旧比钢笔、圆珠笔、铅笔细。
+  - 为可读性单独设了腐蚀上限：越过上限，标准汉字（如「张」「永」）的横竖
+    笔画会断裂成点。实测 0.0126 em 基准 + 最细端 0.0148 em，滑块两端都完整。
+  - 浓度不靠“变灰”换细度：`core_alpha` 满值、halo 近乎为零（0.05），
+    笔画边缘锐利，实测墨点平均 alpha 高于钢笔（220 vs 210），细线仍是实墨。
+  - 命令行同步支持：`--pen needle`。
+- **字体下拉框不再只有 10 项**：此前 `ttk.Combobox` 没有设置 `height`，Tk 默认
+  只展开 10 行，即使目录里有 20 个字体也只看到前 10 个。现在下拉行数跟随字体
+  数量（10–26 行自适应）。
+- **自备字体扫描目录扩充**：除 `assets\fonts\custom\` 外，还会扫描程序目录
+  （或仓库根目录）下的 `fonts\`、`字体\`、`字体文件\`、`ZiTi\`，并支持再深入
+  一层子文件夹。项目自带的 `ZiTi\` 里 18 个字体现在开箱即见。
+- **发布包自带 `fonts\` 字体投放目录**：zip 里多了一个 `fonts\` 文件夹和一份
+  说明 `把字体放这里.txt`，用户解压后直接把字体丢进去即可，不必再找路径。
+- 字体区块标题改为实时统计：「2. 手写字体（共 28 种：内置 10 + 自备 18）」。
+- README 新增「笔型说明」表与「自备字体放哪里」表格。
+
+### Fixed
+
+- **导入的字体只显示 10 种**：两个原因叠加——下拉框 `height` 默认 10 行（界面
+  层面），以及扫描目录里既不含发布包的 `fonts\` 也不含项目的 `ZiTi\`（数据层面）。
+  两处都已修好；同一字体文件重复放在多个目录只会显示一次。
+- **中文支持检测拖慢启动**：18 个自备字体的 cmap 探测合计约 1.39 秒（其中
+  fontTools 解析 cmap 占 1.18 秒），检测结果现在按「路径 + 大小 + 修改时间」
+  缓存在程序目录 `font-cache.json`，冷启动降到 0.06 秒；文件被替换后缓存自动失效，
+  删掉该文件即可强制重新检测。
+
+### Changed
+
+- 笔型单选按钮的间距从 8 px 收到 6 px，四个笔型在一行内不折行。
+- 硬编码的笔型列表（`--pen` 参数、自检脚本、测试用例里的三元组）统一改为读取
+  `PEN_ORDER`，以后新增笔型不会再漏改某一处。
+
 ## [1.0.5] - 2026-10-26
 
 ### Added
@@ -131,7 +171,11 @@ _No unreleased changes._
 - 系统字体（楷体、行楷、新魏、舒体、隶书、仿宋、Ink Free、Segoe Script）不随仓库分发，
   仅在用户本机构建 exe 时打入私有副本。
 
-[Unreleased]: https://github.com/wanwuyijian/Handwritten-font-Tool/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/wanwuyijian/Handwritten-font-Tool/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.1.0
+[1.0.5]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.5
+[1.0.4]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.4
+[1.0.3]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.3
 [1.0.2]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.2
 [1.0.1]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.1
 [1.0.0]: https://github.com/wanwuyijian/Handwritten-font-Tool/releases/tag/v1.0.0

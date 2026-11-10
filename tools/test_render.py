@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from PIL import Image  # noqa: E402
 
-from hstool.ink import build_ink  # noqa: E402
+from hstool.ink import PEN_ORDER, build_ink  # noqa: E402
 from hstool.options import RenderOptions  # noqa: E402
 from hstool.render import render  # noqa: E402
 
@@ -55,7 +55,7 @@ def test_opaque_mode():
 def test_not_clipped():
     """Ink must not touch the image border at any pen weight."""
     for weight in (0.2, 1.0, 3.0):
-        for pen in ("fountain", "ballpoint", "pencil"):
+        for pen in PEN_ORDER:
             res = render("张三丰 Zhang", RenderOptions(
                 text="张三丰 Zhang", pen_key=pen, weight=weight))
             alpha = res.image.getchannel("A")
@@ -187,10 +187,39 @@ def test_script_gap_only_between_scripts():
 
 
 def test_pen_differs():
-    inks = {pen: build_ink(pen_key=pen) for pen in ("fountain", "ballpoint", "pencil")}
+    inks = {pen: build_ink(pen_key=pen) for pen in PEN_ORDER}
     assert inks["fountain"].body_rgb != inks["pencil"].body_rgb
     assert inks["pencil"].grain > inks["ballpoint"].grain
     assert inks["ballpoint"].halo_alpha <= inks["fountain"].halo_alpha
+    for pen in PEN_ORDER:
+        assert inks[pen].body_alpha > 0, pen
+        assert inks[pen].body_rgb != inks["needle"].body_rgb or pen == "needle", pen
+
+
+def test_needle_is_the_finest_pen():
+    """The needle pen must draw the thinnest line, yet stay readable ink."""
+    # erosion is what thins a stroke below the font's own weight, so the
+    # needle has to erode at every slider position, the other pens only below 1
+    for weight in (0.0, 0.5, 1.0, 2.0, 3.0):
+        needle = build_ink(pen_key="needle", weight=weight)
+        assert needle.body_erode > 0.0, weight
+        for pen in ("fountain", "ballpoint", "pencil"):
+            other = build_ink(pen_key=pen, weight=weight)
+            assert needle.body_erode > other.body_erode, (pen, weight)
+    # a fine line needs full pigment and a sharp edge, not a soft grey smear
+    assert build_ink(pen_key="needle").body_alpha >= build_ink(pen_key="fountain").body_alpha
+    assert build_ink(pen_key="needle").blur < build_ink(pen_key="pencil").blur
+
+    common = dict(font_key="kaiti", depth=0.85, blur=0.05, jitter=0.0, seed=7)
+    needle_res = render("张永", RenderOptions(text="张永", pen_key="needle", **common))
+    needle_ink, needle_alpha = _ink_stats(needle_res)
+    for pen in ("fountain", "ballpoint", "pencil"):
+        res = render("张永", RenderOptions(text="张永", pen_key=pen, **common))
+        ink, _alpha = _ink_stats(res)
+        assert needle_ink < ink, (pen, needle_ink, ink)
+    # the point of the pen: thinner than everything else, still clearly legible
+    assert needle_ink > 0
+    assert needle_alpha > 150, needle_alpha
 
 
 def test_depth_darkens():
@@ -296,3 +325,65 @@ def test_custom_font_also_handles_digits():
     # built-in CJK styles still borrow a matching Latin face on purpose
     kaiti = RenderOptions(text="2024abc", font_key="kaiti")
     assert _pick_font_key(kaiti, Script.LATIN, files) == "wenkai"
+
+
+def test_every_imported_font_is_listed():
+    """Regression: only 10 fonts were visible although more were imported.
+
+    The drop down used to stop at the ten built-in styles because user fonts
+    in the project's own ``ZiTi`` folder were never scanned.  Twelve imported
+    fonts must all survive into the catalogue, sorted and de-duplicated.
+    """
+    import tempfile
+
+    from hstool import fonts as fontmod
+
+    source = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts" / "simkai.ttf"
+    if not source.exists():
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        folder = Path(tmp) / "ZiTi"
+        folder.mkdir()
+        names = ["导入字体%02d" % i for i in range(12)]
+        for name in names:
+            target = folder / (name + ".ttf")
+            try:
+                os.link(source, target)
+            except OSError:
+                target.write_bytes(source.read_bytes())
+        original = fontmod.custom_font_dirs
+        fontmod.custom_font_dirs = lambda: [folder]
+        try:
+            fontmod.clear_cache()
+            discovered = fontmod.discover_custom()
+            listed = fontmod.list_styles()
+        finally:
+            fontmod.custom_font_dirs = original
+            fontmod.clear_cache()
+    assert len(discovered) == 12, len(discovered)
+    assert len({style.key for style in discovered}) == 12
+    assert all(style.origin == "custom" for style in discovered)
+    assert all(style.supports_cjk for style in discovered)
+    # the catalogue is the built-in styles plus every imported one
+    assert len(listed) >= 12 + 10, len(listed)
+
+
+def test_font_combo_shows_every_font():
+    """The drop down row count must follow the catalogue, not stop at 10."""
+    from hstool.gui import HandwritingApp
+
+    assert HandwritingApp._font_combo_height(10) == 10
+    assert HandwritingApp._font_combo_height(39) > 10
+    assert HandwritingApp._font_combo_height(0) >= 10
+    # never taller than a screen can show
+    assert HandwritingApp._font_combo_height(500) <= 26
+
+
+def test_extra_font_folders_are_scanned():
+    """Fonts dropped into the project's own font folders are found."""
+    from hstool.fonts import custom_font_dirs
+
+    names = {path.name.lower() for path in custom_font_dirs()}
+    assert "ziti" in names
+    assert "fonts" in names
+    assert "custom" in names

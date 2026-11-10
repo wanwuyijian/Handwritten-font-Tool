@@ -21,6 +21,9 @@ logs/
 settings.json
 *.tmp
 .hstool/
+# 中文支持检测缓存（按路径+大小+mtime 记录，纯本机数据）
+font-cache.json
+font-cache.json.tmp
 
 # ---- Handwritten signatures (privacy: never commit rendered results) ----
 output/

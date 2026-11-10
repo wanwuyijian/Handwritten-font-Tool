@@ -1,6 +1,6 @@
 # 手写签名字体生成工具 · Handwritten Signature Tool
 
-[![Version](https://img.shields.io/badge/version-1.0.5-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-lightgrey)](README.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-yellow)](https://www.python.org/)
@@ -21,9 +21,9 @@
 | --- | --- |
 | 文本输入并识别语言 | 输入框实时识别汉语 / 英语 / 数字 / 符号，显示识别结果；中英混排会自动分段排版，缺字会提示 |
 | 无背景 PNG，适配 Word 签字处 | 默认输出 45 × 15 mm、600 DPI 的 RGBA PNG，写入物理尺寸与 DPI 元数据，插入 Word 后**尺寸不变形**；文件通常 60–160 KB |
-| 10 种手写字体 | 楷体、行楷、霞鹜文楷、悠哉手写、新魏碑、舒体、隶书、仿宋、Ink Free、Segoe Script；另支持放入自备字体（如毛泽东体） |
+| 10 种内置字体 + 任意数量自备字体 | 内置：楷体、行楷、霞鹜文楷、悠哉手写、新魏碑、舒体、隶书、仿宋、Ink Free、Segoe Script。自备字体放 `fonts\` 文件夹即可全部出现在下拉框里（实测 20+ 个也不截断） |
 | 文字模糊度 | UI 滑块 0–100，0 为锐利，100 为明显晕墨 |
-| 文字颜色与类型 | 黑 / 红 / 蓝 × 钢笔 / 圆珠笔 / 铅笔，共 9 种笔迹组合，笔型影响笔锋、颗粒与毛边 |
+| 文字颜色与类型 | 黑 / 红 / 蓝 × 钢笔 / 圆珠笔 / 铅笔 / 针型水笔，共 12 种笔迹组合，笔型影响笔锋、颗粒与毛边 |
 | 文字粗细度 | UI 滑块 0–100，0 为极细笔画（可细到发丝），100 为明显加粗 |
 | 文字颜色深度 | UI 滑块，控制墨色浓淡（淡墨偏灰，浓墨饱满） |
 | 字体倾斜度 | UI 滑块，左倾 ← → 右倾（50 为端正），模拟右倾签名的书写习惯 |
@@ -41,8 +41,8 @@
 | 区块 | 参数 | 说明 |
 | --- | --- | --- |
 | 1. 输入签名文字 | 输入框 | 中英文混排自动分段；下方实时显示「几字 · 汉字几」 |
-| 2. 手写字体 | 10 种字体下拉框 | 选中即时预览；「刷新字体列表」「打开字体文件夹」可加载自备 .ttf/.otf |
-| 3. 笔型与墨色 | 笔型 × 墨色 | 钢笔 / 圆珠笔 / 铅笔 × 黑 / 红 / 蓝 |
+| 2. 手写字体 | 字体下拉框（数量随导入字体变化） | 选中即时预览；标题实时显示「共 N 种：内置 10 + 自备 N」；「刷新字体列表」「打开字体文件夹」可加载自备 .ttf/.otf |
+| 3. 笔型与墨色 | 笔型 × 墨色 | 钢笔 / 圆珠笔 / 铅笔 / 针型水笔 × 黑 / 红 / 蓝 |
 | 4. 字迹微调 | 粗细度 | 极细 → 粗（0 为发丝级细笔，100 为加粗） |
 | | 字间间距 | 紧 → 松（字与字之间的留白） |
 | | 中英间距 | 紧贴 → 拉开（汉字与英文 / 数字交界处） |
@@ -61,7 +61,8 @@
 
 ## 快速开始（普通用户）
 
-1. 下载 `HandwrittenSignatureTool-1.0.0-portable.zip` 并解压（或直接使用 `HandwrittenSignatureTool.exe`）。
+1. 下载 `HandwrittenSignatureTool-1.1.0-portable.zip` 并解压（或直接使用 `HandwrittenSignatureTool.exe`）。
+   自备字体丢进解压出来的 `fonts\` 文件夹即可。
 2. 双击 `HandwrittenSignatureTool.exe`，首次启动约 2–5 秒（onefile 解包到临时目录）。
 3. 在左侧输入姓名 → 选择字体与笔迹 → 点「保存 PNG」。
 4. Word 中：**插入 → 图片**，选中 PNG，将「环绕方式」设为**浮于文字上方**，
@@ -94,9 +95,34 @@
 | 10 | Segoe Script | 英文连笔 | Windows 系统字体 |
 
 * 毛笔字体（如**毛泽东体**、名家手迹体）多受商业授权保护，本工具**不内置、不提供下载**。
-  如需使用：菜单「帮助 → 添加自定义字体」会打开字体目录，把自备的 `.ttf / .otf` 放进去：
-  程序同目录的 `fonts\`，或 `assets\fonts\custom\`，然后点「刷新字体列表」，
-  新字体会出现在下拉框「自备字体」分组里。自定义字体只在本机使用，请遵守字体授权。
+  如需使用：菜单「帮助 → 添加自定义字体」会打开字体目录，把自备的 `.ttf / .otf / .ttc` 放进去，
+  然后点「刷新字体列表」。以下文件夹都会被扫描（可再建一层子文件夹分类）：
+
+  | 位置 | 说明 |
+  | --- | --- |
+  | `程序目录\fonts\` | 发布包已自带此文件夹，最省事 |
+  | `程序目录\字体\`、`字体文件\`、`ZiTi\` | 中文习惯命名，同样识别 |
+  | `assets\fonts\custom\` | 源码运行时（仓库根目录下） |
+
+  导入的字体全部出现在下拉框里（「N 种：内置 10 + 自备 N」），数量不受 10 条限制；
+  同一个字体文件放在多个目录只会显示一次。自定义字体只在本机使用，请遵守字体授权。
+  中文支持检测结果会缓存在程序目录的 `font-cache.json`，删掉它即可强制重新检测。
+
+---
+
+## 笔型说明
+
+| 笔型 | 观感 | 适用 |
+| --- | --- | --- |
+| 钢笔 | 墨色最深，边缘有纸张洇墨的柔边 | 正式签名、需要“有墨水感”的场合 |
+| 圆珠笔 | 笔画均匀、边缘利落，几乎不洇 | 表格、日常签字 |
+| 铅笔 | 淡、颗粒明显、有涂抹感 | 草稿、备注 |
+| **针型水笔** | **四种里最细**：笔画从字形轮廓向内收，边锋锐利、浓度饱满（不靠变灰来显细） | 密集表格、小尺寸签名处、需要极细又不糊的场合 |
+
+针型水笔的“细”不是把颜色调淡，而是把笔画真正削细：字形轮廓本身无法再瘦，
+所以对笔画蒙版做等距腐蚀（erosion），并为它单独设了上限——越过上限笔画就会
+断裂成点，因此滑块 0 和滑块 100 的细度都在可读范围内。选它时建议把「模糊度」
+保持在 0–15，细线一旦晕开就失去针尖感。
 
 ---
 
@@ -117,7 +143,7 @@ HandwrittenSignatureTool.exe --version
 | --- | --- |
 | `--cli` | 不显示窗口，渲染一次后退出 |
 | `--font` | 字体 key：`kaiti` `xingkai` `wenkai` `yozai` `xinwei` `shuti` `lisu` `fangsong` `inkfree` `segoescript` |
-| `--pen` | `fountain` / `ballpoint` / `pencil` |
+| `--pen` | `fountain` / `ballpoint` / `pencil` / `needle`（针型水笔） |
 | `--color` | `black` / `red` / `blue` |
 | `--size` | 毫米尺寸，如 `45x15`、`60x20` |
 | `--dpi` | 300 / 600 / 1200 |
@@ -169,7 +195,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1
 产物：
 
 * `dist\HandwrittenSignatureTool.exe` —— 单文件免安装程序
-* `dist\release\HandwrittenSignatureTool-<版本>-portable.zip` —— 发布包（exe + README + LICENSE）
+* `dist\release\HandwrittenSignatureTool-<版本>-portable.zip` —— 发布包（exe + README + LICENSE + `fonts\` 字体投放目录）
 
 `build.ps1` 会依次：读取版本 → 用 8 000 常用汉字重新子集化系统字体（约 13 MB）→
 跑单元测试 → 生成 PyInstaller spec 与 Windows 版本资源 → 打包 → **用生成的 exe 执行

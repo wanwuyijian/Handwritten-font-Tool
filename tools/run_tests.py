@@ -53,6 +53,7 @@ def run_selftest(out_path: Path | None) -> int:
     """Render a sample with every style and every pen, then report."""
     from hstool import __version__
     from hstool.fonts import list_styles
+    from hstool.ink import PEN_ORDER
     from hstool.options import RenderOptions
     from hstool.render import render
     from hstool.text import analyze, normalize_text
@@ -70,7 +71,7 @@ def run_selftest(out_path: Path | None) -> int:
             "renders": {},
         }
         text = sample_cn if info.style.supports_cjk else sample_en
-        for pen in ("fountain", "ballpoint", "pencil"):
+        for pen in PEN_ORDER:
             try:
                 res = render(text, RenderOptions(
                     text=text, font_key=info.style.key, pen_key=pen,

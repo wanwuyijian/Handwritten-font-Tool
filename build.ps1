@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Build the portable Handwritten Signature Tool executable.
 
@@ -221,7 +221,30 @@ if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Copy-Item $exePath (Join-Path $releaseDir "$exeName.exe") -Force
 Copy-Item (Join-Path $root "README.md") (Join-Path $releaseDir "README.md") -Force
 Copy-Item (Join-Path $root "LICENSE") (Join-Path $releaseDir "LICENSE") -Force
-Compress-Archive -Path (Join-Path $releaseDir "$exeName.exe"), (Join-Path $releaseDir "README.md"), (Join-Path $releaseDir "LICENSE") -DestinationPath $zipPath -Force
+
+# The portable package has to ship a font drop-in folder: without it the exe
+# only ever lists the ten built-in styles, because that is all it can find next
+# to itself.  Users unzip and drop their own .ttf/.otf files in here.
+$releaseFonts = Join-Path $releaseDir "fonts"
+New-Item -ItemType Directory -Force -Path $releaseFonts | Out-Null
+$fontNoteLines = @(
+    "把字体放这里",
+    "============",
+    "",
+    "支持的格式：.ttf / .otf / .ttc（可以再建一层子文件夹分类）",
+    "",
+    "放入或删除字体后，在软件里点「刷新字体列表」（或重启程序），",
+    "字体下拉框里就会多出「文件名（自定义）」。",
+    "",
+    "字体文件版权归各字体厂商所有，本发布包不自带任何第三方字体：",
+    "请只放入自己有权使用的字体。",
+    "",
+    "同样的文件夹也可以命名为「字体」「字体文件」「ZiTi」，程序都会扫描。"
+)
+$fontNote = ($fontNoteLines -join "`r`n") + "`r`n"
+[System.IO.File]::WriteAllText((Join-Path $releaseFonts "把字体放这里.txt"), $fontNote, (New-Object System.Text.UTF8Encoding($true)))
+
+Compress-Archive -Path (Join-Path $releaseDir "$exeName.exe"), (Join-Path $releaseDir "README.md"), (Join-Path $releaseDir "LICENSE"), $releaseFonts -DestinationPath $zipPath -Force
 
 Write-Step "Done"
 Write-Host "  exe : $exePath"
